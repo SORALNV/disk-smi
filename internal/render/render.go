@@ -128,7 +128,7 @@ func renderPanel(snapshot model.DriveSnapshot, opts Options, text labels, border
 	lines := []string{
 		borders.topLeft + strings.Repeat(borders.horizontal, inner) + borders.topRight,
 		wrapSingle(snapshotHeader(snapshot, opts, text), inner, borders),
-		separator(topCols, borders),
+		separator(topCols, borders.teeDown, borders),
 		topRow([]cell{
 			{text.overallStatus, AlignCenter},
 			{text.temperature, AlignCenter},
@@ -149,7 +149,8 @@ func renderPanel(snapshot model.DriveSnapshot, opts Options, text labels, border
 			{text.hostReads + "   " + bytes(snapshot.Metrics.HostReadsBytes, opts, text), AlignCenter},
 		}, topCols, borders),
 		topRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
-		titledSeparator(text.healthEndurance, text.powerUsage, left, right, borders),
+		separator(topCols, borders.teeUp, borders),
+		titledSeparatorWithJunction(text.healthEndurance, text.powerUsage, left, right, borders.teeDown, borders),
 		twoCol(text.enduranceUsed, percent(snapshot.Metrics.EnduranceUsedPercent, text), text.ssdPowerCycles, count(snapshot.Metrics.PowerCycles, optsSuffix(text, "回"), text), left, right, borders),
 		twoCol(text.availableSpare, percent(snapshot.Metrics.AvailableSparePercent, text), text.unsafeShutdowns, count(snapshot.Metrics.UnsafeShutdowns, optsSuffix(text, "回"), text), left, right, borders),
 		twoCol(text.spareThreshold, percent(snapshot.Metrics.SpareThresholdPercent, text), text.controllerBusyTime, controllerBusy(snapshot.Metrics.ControllerBusyMinutes, text), left, right, borders),
@@ -217,17 +218,21 @@ func bottomColumns(inner int) (int, int) {
 	return left, available - left
 }
 
-func separator(widths []int, borders borderSet) string {
+func separator(widths []int, junction string, borders borderSet) string {
 	parts := make([]string, len(widths))
 	for i, width := range widths {
 		parts[i] = strings.Repeat(borders.horizontal, width)
 	}
-	return borders.teeLeft + strings.Join(parts, borders.cross) + borders.teeRight
+	return borders.teeLeft + strings.Join(parts, junction) + borders.teeRight
 }
 
 func titledSeparator(leftTitle, rightTitle string, leftWidth, rightWidth int, borders borderSet) string {
+	return titledSeparatorWithJunction(leftTitle, rightTitle, leftWidth, rightWidth, borders.cross, borders)
+}
+
+func titledSeparatorWithJunction(leftTitle, rightTitle string, leftWidth, rightWidth int, junction string, borders borderSet) string {
 	cells := horizontalCells(leftWidth+1+rightWidth, borders)
-	setCell(cells, leftWidth, borders.cross)
+	setCell(cells, leftWidth, junction)
 	placeTitle(cells, 0, leftWidth, leftTitle)
 	placeTitle(cells, leftWidth+1, leftWidth+1+rightWidth, rightTitle)
 	return borders.teeLeft + strings.Join(cells, "") + borders.teeRight

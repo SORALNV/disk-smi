@@ -6,6 +6,7 @@
 |         GOOD          |     36°C     |     1,500 hours      |        Host writes  4.20 TB        |
 |     Endurance 70%     |              |      62 d 12 h       |        Host reads   3.50 TB        |
 |                       |              |                      |                                    |
++-----------------------+--------------+----------------------+------------------------------------+
 +- HEALTH & ENDURANCE ---------------------------+- POWER & USAGE ---------------------------------+
 | Endurance used                             30% | SSD power cycles                            428 |
 | Available spare                           100% | Unsafe shutdowns                              7 |
