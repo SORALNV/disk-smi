@@ -1,6 +1,9 @@
 package render
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestDisplayWidth(t *testing.T) {
 	tests := []struct {
@@ -14,6 +17,7 @@ func TestDisplayWidth(t *testing.T) {
 		{name: "combining", text: "e\u0301", want: 1},
 		{name: "ansi", text: "\x1b[32mGOOD\x1b[0m", want: 4},
 		{name: "emoji", text: "😀", want: 2},
+		{name: "unicode borders", text: "┌" + strings.Repeat("─", 98) + "┐", want: 100},
 	}
 
 	for _, tt := range tests {

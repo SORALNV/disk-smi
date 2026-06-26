@@ -17,13 +17,17 @@ const (
 )
 
 var ansiPattern = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
+var widthCondition = &runewidth.Condition{
+	EastAsianWidth:     false,
+	StrictEmojiNeutral: runewidth.StrictEmojiNeutral,
+}
 
 func StripANSI(text string) string {
 	return ansiPattern.ReplaceAllString(text, "")
 }
 
 func DisplayWidth(text string) int {
-	return runewidth.StringWidth(StripANSI(text))
+	return widthCondition.StringWidth(StripANSI(text))
 }
 
 func SanitizeTerminalText(text string) string {
@@ -90,7 +94,7 @@ func truncateDisplay(text string, width int) string {
 	graphemes := uniseg.NewGraphemes(text)
 	for graphemes.Next() {
 		cluster := graphemes.Str()
-		clusterWidth := runewidth.StringWidth(StripANSI(cluster))
+		clusterWidth := widthCondition.StringWidth(StripANSI(cluster))
 		if current+clusterWidth > limit {
 			break
 		}
