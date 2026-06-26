@@ -10,11 +10,16 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest
     strategy:
       matrix:
-        goos: [darwin]
-        goarch: [amd64, arm64]
+        include:
+          - goos: darwin
+            goarch: arm64
+            runner: macos-15
+          - goos: darwin
+            goarch: amd64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -24,14 +29,14 @@ jobs:
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: "0"
+          CGO_ENABLED: "1"
         run: |
           version="${GITHUB_REF_NAME#v}"
           commit="${GITHUB_SHA}"
           mkdir -p dist
           go build \
             -ldflags "-s -w -X disk-smi/internal/version.Version=${version} -X disk-smi/internal/version.Commit=${commit}" \
-            -o "dist/disk-smi-${GITHUB_REF_NAME}-${GOOS}-${GOARCH}" \
+            -o "dist/disk-smi-${GOOS}-${GOARCH}" \
             ./cmd/disk-smi
       - name: Archive
         run: |
