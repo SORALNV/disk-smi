@@ -1,0 +1,1 @@
+Smartctl open device: /dev/disk0 failed: Permission denied

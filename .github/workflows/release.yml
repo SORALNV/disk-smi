@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        goos: [darwin]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          commit="${GITHUB_SHA}"
+          mkdir -p dist
+          go build \
+            -ldflags "-s -w -X disk-smi/internal/version.Version=${version} -X disk-smi/internal/version.Commit=${commit}" \
+            -o "dist/disk-smi-${GITHUB_REF_NAME}-${GOOS}-${GOARCH}" \
+            ./cmd/disk-smi
+      - name: Archive
+        run: |
+          cd dist
+          shasum -a 256 * > "checksums-${{ matrix.goarch }}.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: disk-smi-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+
+  publish:
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Generate Formula update metadata
+        run: |
+          source_url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+          curl -fsSL "$source_url" -o /tmp/disk-smi-source.tar.gz
+          source_sha="$(shasum -a 256 /tmp/disk-smi-source.tar.gz | awk '{print $1}')"
+          version="${GITHUB_REF_NAME#v}"
+          owner="${GITHUB_REPOSITORY_OWNER}"
+          {
+            echo "Source archive: $source_url"
+            echo "SHA256: $source_sha"
+            echo
+            echo "Update Formula:"
+            echo "ruby scripts/update_formula.rb --owner ${owner} --version ${version} --sha256 ${source_sha}"
+          } > dist/formula-update.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

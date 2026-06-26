@@ -1,0 +1,8 @@
+{
+  "device": {
+    "name": "/dev/disk0"
+  },
+  "nvme_smart_health_information_log": {
+    "percentage_used":
+  }
+}

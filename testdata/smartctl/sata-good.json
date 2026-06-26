@@ -1,0 +1,63 @@
+{
+  "device": {
+    "name": "/dev/disk2",
+    "type": "sat",
+    "protocol": "ATA"
+  },
+  "model_name": "SATA SSD 500",
+  "serial_number": "SATASSD123456",
+  "firmware_version": "R0123A",
+  "user_capacity": {
+    "bytes": 500107862016
+  },
+  "smart_status": {
+    "passed": true
+  },
+  "temperature": {
+    "current": 36
+  },
+  "ata_smart_attributes": {
+    "table": [
+      {
+        "id": 5,
+        "name": "Reallocated_Sector_Ct",
+        "raw": {
+          "value": 0,
+          "string": "0"
+        }
+      },
+      {
+        "id": 9,
+        "name": "Power_On_Hours",
+        "raw": {
+          "value": 1500,
+          "string": "1500"
+        }
+      },
+      {
+        "id": 12,
+        "name": "Power_Cycle_Count",
+        "raw": {
+          "value": 428,
+          "string": "428"
+        }
+      },
+      {
+        "id": 194,
+        "name": "Temperature_Celsius",
+        "raw": {
+          "value": 36,
+          "string": "36 (Min/Max 20/41)"
+        }
+      },
+      {
+        "id": 177,
+        "name": "Wear_Leveling_Count",
+        "raw": {
+          "value": 30,
+          "string": "30"
+        }
+      }
+    ]
+  }
+}

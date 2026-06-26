@@ -1,0 +1,35 @@
+{
+  "device": {
+    "name": "/dev/disk0",
+    "type": "nvme",
+    "protocol": "NVMe"
+  },
+  "model_name": "TEST NVME",
+  "serial_number": "TEST123456",
+  "firmware_version": "1.0",
+  "nvme_total_capacity": 1000,
+  "smart_status": {
+    "passed": true
+  },
+  "nvme_identify_controller": {
+    "wctemp": 343,
+    "cctemp": 353
+  },
+  "nvme_smart_health_information_log": {
+    "critical_warning": 0,
+    "temperature": 70,
+    "available_spare": 100,
+    "available_spare_threshold": 10,
+    "percentage_used": 1,
+    "data_units_read": 1,
+    "data_units_written": 1,
+    "host_read_commands": 1,
+    "host_write_commands": 1,
+    "controller_busy_time": 0,
+    "power_cycles": 1,
+    "power_on_hours": 1,
+    "unsafe_shutdowns": 0,
+    "media_errors": 0,
+    "num_err_log_entries": 0
+  }
+}

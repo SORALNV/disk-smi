@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+  <dict>
+    <key>Model Number</key>
+    <string>APPLE SSD AP1024Z</string>
+    <key>Serial Number</key>
+    <string>SYNATIVE9K2A</string>
+    <key>Firmware Revision</key>
+    <string>2973.100</string>
+    <key>Physical Interconnect</key>
+    <string>Apple Fabric</string>
+    <key>Physical Interconnect Location</key>
+    <string>Internal</string>
+    <key>NVMe Revision Supported</key>
+    <string>1.10</string>
+    <key>IORegistryEntryChildren</key>
+    <array>
+      <dict>
+        <key>IORegistryEntryChildren</key>
+        <array>
+          <dict>
+            <key>IORegistryEntryChildren</key>
+            <array>
+              <dict>
+                <key>BSD Name</key>
+                <string>disk0</string>
+                <key>Whole</key>
+                <true/>
+              </dict>
+            </array>
+          </dict>
+        </array>
+      </dict>
+    </array>
+  </dict>
+</array>
+</plist>

@@ -1,0 +1,15 @@
+{
+  "device": {
+    "name": "/dev/disk4",
+    "type": "sat",
+    "protocol": "ATA"
+  },
+  "model_name": "USB Bridge SSD",
+  "serial_number": "USB123456",
+  "firmware_version": "1.00",
+  "user_capacity": {
+    "bytes": 1000204886016
+  },
+  "smart_status": {},
+  "nvme_smart_health_information_log": {}
+}

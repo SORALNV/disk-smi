@@ -1,0 +1,40 @@
+{
+  "device": {
+    "name": "/dev/disk0",
+    "type": "nvme",
+    "protocol": "NVMe"
+  },
+  "model_name": "APPLE SSD AP1024Z",
+  "serial_number": "SYNTHETIC9K2A",
+  "firmware_version": "874.120.9",
+  "nvme_total_capacity": 1000204886016,
+  "nvme_version": {
+    "string": "1.4"
+  },
+  "smart_status": {
+    "passed": true
+  },
+  "nvme_smart_health_information_log": {
+    "critical_warning": 0,
+    "temperature": 36,
+    "available_spare": 100,
+    "available_spare_threshold": 10,
+    "percentage_used": 100,
+    "data_units_read": 6835938,
+    "data_units_written": 8203125,
+    "host_read_commands": 82019334,
+    "host_write_commands": 61274004,
+    "controller_busy_time": 6720,
+    "power_cycles": 428,
+    "power_on_hours": 1500,
+    "unsafe_shutdowns": 7,
+    "media_errors": 0,
+    "num_err_log_entries": 0,
+    "warning_temp_time": 0,
+    "critical_comp_time": 0,
+    "temperature_sensors": [
+      36,
+      41
+    ]
+  }
+}

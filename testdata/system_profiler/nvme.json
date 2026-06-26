@@ -1,0 +1,18 @@
+{
+  "SPNVMeDataType": [
+    {
+      "_items": [
+        {
+          "_name": "APPLE SSD AP1024Z",
+          "bsd_name": "disk0",
+          "device_model": "APPLE SSD AP1024Z",
+          "device_revision": "2973.100",
+          "device_serial": "SYNATIVE9K2A",
+          "size_in_bytes": 1000555581440,
+          "smart_status": "Verified"
+        }
+      ],
+      "_name": "Apple SSD Controller"
+    }
+  ]
+}

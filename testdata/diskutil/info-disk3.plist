@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>DeviceIdentifier</key>
+  <string>disk3</string>
+  <key>DeviceNode</key>
+  <string>/dev/disk3</string>
+  <key>WholeDisk</key>
+  <true/>
+  <key>Internal</key>
+  <false/>
+  <key>SolidState</key>
+  <false/>
+  <key>MediaName</key>
+  <string>USB HDD</string>
+  <key>Protocol</key>
+  <string>USB</string>
+  <key>BusProtocol</key>
+  <string>USB</string>
+  <key>TotalSize</key>
+  <integer>500107862016</integer>
+</dict>
+</plist>

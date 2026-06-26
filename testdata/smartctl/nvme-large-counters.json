@@ -1,0 +1,31 @@
+{
+  "device": {
+    "name": "/dev/disk0",
+    "type": "nvme",
+    "protocol": "NVMe"
+  },
+  "model_name": "BIG COUNTER SSD",
+  "serial_number": "BIG123456789",
+  "firmware_version": "1.0",
+  "nvme_total_capacity": 1000204886016,
+  "smart_status": {
+    "passed": true
+  },
+  "nvme_smart_health_information_log": {
+    "critical_warning": 0,
+    "temperature": 35,
+    "available_spare": 100,
+    "available_spare_threshold": 10,
+    "percentage_used": 1,
+    "data_units_read": 184467440737095516160,
+    "data_units_written": 184467440737095516161,
+    "host_read_commands": 184467440737095516162,
+    "host_write_commands": 184467440737095516163,
+    "controller_busy_time": 184467440737095516164,
+    "power_cycles": 184467440737095516165,
+    "power_on_hours": 184467440737095516166,
+    "unsafe_shutdowns": 184467440737095516167,
+    "media_errors": 0,
+    "num_err_log_entries": 0
+  }
+}
