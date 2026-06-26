@@ -19,9 +19,25 @@
 
 ## ダウンロードとインストール
 
-通常はビルド不要です。GitHub Releases のビルド済みバイナリをダウンロードして使います。
+通常はビルド不要です。インストーラを実行すると、Macに合うビルド済みバイナリを自動でダウンロードします。
 
-### Apple Silicon Mac
+```bash
+curl -fsSL https://raw.githubusercontent.com/SORALNV/disk-smi/main/install.sh | sh
+disk-smi -jp
+```
+
+インストール先は標準で `~/.local/bin/disk-smi` です。`~/.local/bin` がPATHに無い場合は、インストーラが `~/.zshrc` または `~/.bashrc` にPATH設定を追加します。その場合は新しいターミナルを開くか、次を実行してください。
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+disk-smi -jp
+```
+
+### 手動でダウンロードする場合
+
+インストーラを使わずに入れたい場合の手順です。
+
+#### Apple Silicon Mac
 
 M1/M2/M3/M4 などのMacはこちらです。
 
@@ -32,17 +48,9 @@ chmod +x ~/.local/bin/disk-smi
 disk-smi -jp
 ```
 
-`disk-smi: command not found` になる場合は、`~/.local/bin` をPATHに追加します。
+#### Intel Mac
 
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-disk-smi -jp
-```
-
-### Intel Mac
-
-Intel Macはこちらです。
+Intel Mac はこちらです。
 
 ```bash
 mkdir -p ~/.local/bin
