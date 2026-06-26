@@ -30,17 +30,20 @@ type Options struct {
 type borderSet struct {
 	topLeft, topRight, bottomLeft, bottomRight string
 	horizontal, vertical, teeLeft, teeRight    string
+	teeUp, teeDown                             string
 	cross                                      string
 }
 
 var unicodeBorders = borderSet{
 	topLeft: "┌", topRight: "┐", bottomLeft: "└", bottomRight: "┘",
-	horizontal: "─", vertical: "│", teeLeft: "├", teeRight: "┤", cross: "┼",
+	horizontal: "─", vertical: "│", teeLeft: "├", teeRight: "┤",
+	teeUp: "┴", teeDown: "┬", cross: "┼",
 }
 
 var asciiBorders = borderSet{
 	topLeft: "+", topRight: "+", bottomLeft: "+", bottomRight: "+",
-	horizontal: "-", vertical: "|", teeLeft: "+", teeRight: "+", cross: "+",
+	horizontal: "-", vertical: "|", teeLeft: "+", teeRight: "+",
+	teeUp: "+", teeDown: "+", cross: "+",
 }
 
 type labels struct {
@@ -125,27 +128,27 @@ func renderPanel(snapshot model.DriveSnapshot, opts Options, text labels, border
 	lines := []string{
 		borders.topLeft + strings.Repeat(borders.horizontal, inner) + borders.topRight,
 		wrapSingle(snapshotHeader(snapshot, opts, text), inner, borders),
-		separator(topCols, borders),
-		topRow([]cell{
+		borders.teeLeft + strings.Repeat(borders.horizontal, inner) + borders.teeRight,
+		topSummaryRow([]cell{
 			{text.overallStatus, AlignCenter},
 			{text.temperature, AlignCenter},
 			{text.powerOnTime, AlignCenter},
 			{text.lifetimeIO, AlignCenter},
 		}, topCols, borders),
-		topRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
-		topRow([]cell{
+		topSummaryRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
+		topSummaryRow([]cell{
 			{status(snapshot.Assessment.OverallStatus, opts, text), AlignCenter},
 			{temperature(snapshot.Metrics.TemperatureCelsius, text), AlignCenter},
 			{hours(snapshot.Metrics.PowerOnHours, text, false), AlignCenter},
 			{text.hostWrites + "  " + bytes(snapshot.Metrics.HostWritesBytes, opts, text), AlignCenter},
 		}, topCols, borders),
-		topRow([]cell{
+		topSummaryRow([]cell{
 			{text.enduranceLine + " " + enduranceRemaining(snapshot.Metrics.EnduranceUsedPercent, text), AlignCenter},
 			{"", AlignCenter},
 			{hours(snapshot.Metrics.PowerOnHours, text, true), AlignCenter},
 			{text.hostReads + "   " + bytes(snapshot.Metrics.HostReadsBytes, opts, text), AlignCenter},
 		}, topCols, borders),
-		topRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
+		topSummaryRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
 		titledSeparator(text.healthEndurance, text.powerUsage, left, right, borders),
 		twoCol(text.enduranceUsed, percent(snapshot.Metrics.EnduranceUsedPercent, text), text.ssdPowerCycles, count(snapshot.Metrics.PowerCycles, optsSuffix(text, "回"), text), left, right, borders),
 		twoCol(text.availableSpare, percent(snapshot.Metrics.AvailableSparePercent, text), text.unsafeShutdowns, count(snapshot.Metrics.UnsafeShutdowns, optsSuffix(text, "回"), text), left, right, borders),
@@ -166,7 +169,7 @@ func renderPanel(snapshot model.DriveSnapshot, opts Options, text labels, border
 		lines = append(lines, loopRows(stats, opts, text, left, right, borders)...)
 	}
 	lines = append(lines,
-		borders.teeLeft+strings.Repeat(borders.horizontal, inner)+borders.teeRight,
+		endSeparator(left, right, borders),
 		wrapSingle(text.note1, inner, borders),
 		wrapSingle(text.note2, inner, borders),
 		borders.bottomLeft+strings.Repeat(borders.horizontal, inner)+borders.bottomRight,
@@ -214,33 +217,76 @@ func bottomColumns(inner int) (int, int) {
 	return left, available - left
 }
 
-func separator(widths []int, borders borderSet) string {
-	parts := make([]string, len(widths))
-	for i, width := range widths {
-		parts[i] = strings.Repeat(borders.horizontal, width)
-	}
-	return borders.teeLeft + strings.Join(parts, borders.cross) + borders.teeRight
-}
-
 func titledSeparator(leftTitle, rightTitle string, leftWidth, rightWidth int, borders borderSet) string {
-	return borders.teeLeft + titledSegment(leftTitle, leftWidth, borders) + borders.cross + titledSegment(rightTitle, rightWidth, borders) + borders.teeRight
+	cells := horizontalCells(leftWidth+1+rightWidth, borders)
+	setCell(cells, leftWidth, borders.cross)
+	placeTitle(cells, 0, leftWidth, leftTitle)
+	placeTitle(cells, leftWidth+1, leftWidth+1+rightWidth, rightTitle)
+	return borders.teeLeft + strings.Join(cells, "") + borders.teeRight
 }
 
-func titledSegment(title string, width int, borders borderSet) string {
+func endSeparator(leftWidth, rightWidth int, borders borderSet) string {
+	cells := horizontalCells(leftWidth+1+rightWidth, borders)
+	setCell(cells, leftWidth, borders.teeUp)
+	return borders.teeLeft + strings.Join(cells, "") + borders.teeRight
+}
+
+func horizontalCells(width int, borders borderSet) []string {
+	cells := make([]string, width)
+	for i := range cells {
+		cells[i] = borders.horizontal
+	}
+	return cells
+}
+
+func setCell(cells []string, position int, value string) {
+	if position < 0 || position >= len(cells) {
+		return
+	}
+	cells[position] = value
+}
+
+func placeTitle(cells []string, start, end int, title string) {
 	title = " " + SanitizeTerminalText(title) + " "
 	titleWidth := DisplayWidth(title)
-	if titleWidth >= width {
-		return truncateDisplay(title, width)
+	if titleWidth <= 0 || start >= end {
+		return
 	}
-	return borders.horizontal + title + strings.Repeat(borders.horizontal, width-titleWidth-1)
+	if titleWidth > end-start {
+		title = truncateDisplay(title, end-start)
+		titleWidth = DisplayWidth(title)
+	}
+	position := start + 1
+	if position+titleWidth > end {
+		position = start
+	}
+	overlayDisplay(cells, position, title)
 }
 
-func topRow(cells []cell, widths []int, borders borderSet) string {
+func overlayDisplay(cells []string, start int, text string) {
+	position := start
+	for _, r := range text {
+		width := DisplayWidth(string(r))
+		if width <= 0 {
+			continue
+		}
+		if position >= len(cells) {
+			return
+		}
+		cells[position] = string(r)
+		for offset := 1; offset < width && position+offset < len(cells); offset++ {
+			cells[position+offset] = ""
+		}
+		position += width
+	}
+}
+
+func topSummaryRow(cells []cell, widths []int, borders borderSet) string {
 	parts := make([]string, len(cells))
 	for i, cell := range cells {
 		parts[i] = RenderCell(cell.text, widths[i], cell.alignment)
 	}
-	return borders.vertical + strings.Join(parts, borders.vertical) + borders.vertical
+	return borders.vertical + strings.Join(parts, " ") + borders.vertical
 }
 
 func twoCol(leftLabel, leftValue, rightLabel, rightValue string, leftWidth, rightWidth int, borders borderSet) string {

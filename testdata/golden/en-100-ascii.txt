@@ -1,11 +1,11 @@
 +--------------------------------------------------------------------------------------------------+
 | APPLE SSD AP1024Z / 1.00 TB / NVMe / UNKNOWN / disk0                                             |
-+-----------------------+--------------+----------------------+------------------------------------+
-|    OVERALL STATUS     | TEMPERATURE  |    POWER-ON TIME     |         LIFETIME HOST I/O          |
-|                       |              |                      |                                    |
-|         GOOD          |     36°C     |     1,500 hours      |        Host writes  4.20 TB        |
-|     Endurance 70%     |              |      62 d 12 h       |        Host reads   3.50 TB        |
-|                       |              |                      |                                    |
++--------------------------------------------------------------------------------------------------+
+|    OVERALL STATUS       TEMPERATURE       POWER-ON TIME               LIFETIME HOST I/O          |
+|                                                                                                  |
+|         GOOD                36°C           1,500 hours               Host writes  4.20 TB        |
+|     Endurance 70%                           62 d 12 h                Host reads   3.50 TB        |
+|                                                                                                  |
 +- HEALTH & ENDURANCE ---------------------------+- POWER & USAGE ---------------------------------+
 | Endurance used                             30% | SSD power cycles                            428 |
 | Available spare                           100% | Unsafe shutdowns                              7 |
@@ -20,7 +20,7 @@
 | Temperature sensors                  36 / 41°C | Serial                                 ****9K2A |
 | Warning temperature                          — | Critical temperature                          — |
 | Last self-test                               — |                                                 |
-+--------------------------------------------------------------------------------------------------+
++------------------------------------------------+-------------------------------------------------+
 | NOTE: Endurance 0% means the device-reported rated endurance has been consumed.                  |
 | It does not mean immediate SSD failure.                                                          |
 +--------------------------------------------------------------------------------------------------+
