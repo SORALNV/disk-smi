@@ -128,27 +128,27 @@ func renderPanel(snapshot model.DriveSnapshot, opts Options, text labels, border
 	lines := []string{
 		borders.topLeft + strings.Repeat(borders.horizontal, inner) + borders.topRight,
 		wrapSingle(snapshotHeader(snapshot, opts, text), inner, borders),
-		borders.teeLeft + strings.Repeat(borders.horizontal, inner) + borders.teeRight,
-		topSummaryRow([]cell{
+		separator(topCols, borders),
+		topRow([]cell{
 			{text.overallStatus, AlignCenter},
 			{text.temperature, AlignCenter},
 			{text.powerOnTime, AlignCenter},
 			{text.lifetimeIO, AlignCenter},
 		}, topCols, borders),
-		topSummaryRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
-		topSummaryRow([]cell{
+		topRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
+		topRow([]cell{
 			{status(snapshot.Assessment.OverallStatus, opts, text), AlignCenter},
 			{temperature(snapshot.Metrics.TemperatureCelsius, text), AlignCenter},
 			{hours(snapshot.Metrics.PowerOnHours, text, false), AlignCenter},
 			{text.hostWrites + "  " + bytes(snapshot.Metrics.HostWritesBytes, opts, text), AlignCenter},
 		}, topCols, borders),
-		topSummaryRow([]cell{
+		topRow([]cell{
 			{text.enduranceLine + " " + enduranceRemaining(snapshot.Metrics.EnduranceUsedPercent, text), AlignCenter},
 			{"", AlignCenter},
 			{hours(snapshot.Metrics.PowerOnHours, text, true), AlignCenter},
 			{text.hostReads + "   " + bytes(snapshot.Metrics.HostReadsBytes, opts, text), AlignCenter},
 		}, topCols, borders),
-		topSummaryRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
+		topRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
 		titledSeparator(text.healthEndurance, text.powerUsage, left, right, borders),
 		twoCol(text.enduranceUsed, percent(snapshot.Metrics.EnduranceUsedPercent, text), text.ssdPowerCycles, count(snapshot.Metrics.PowerCycles, optsSuffix(text, "回"), text), left, right, borders),
 		twoCol(text.availableSpare, percent(snapshot.Metrics.AvailableSparePercent, text), text.unsafeShutdowns, count(snapshot.Metrics.UnsafeShutdowns, optsSuffix(text, "回"), text), left, right, borders),
@@ -217,6 +217,14 @@ func bottomColumns(inner int) (int, int) {
 	return left, available - left
 }
 
+func separator(widths []int, borders borderSet) string {
+	parts := make([]string, len(widths))
+	for i, width := range widths {
+		parts[i] = strings.Repeat(borders.horizontal, width)
+	}
+	return borders.teeLeft + strings.Join(parts, borders.cross) + borders.teeRight
+}
+
 func titledSeparator(leftTitle, rightTitle string, leftWidth, rightWidth int, borders borderSet) string {
 	cells := horizontalCells(leftWidth+1+rightWidth, borders)
 	setCell(cells, leftWidth, borders.cross)
@@ -281,12 +289,12 @@ func overlayDisplay(cells []string, start int, text string) {
 	}
 }
 
-func topSummaryRow(cells []cell, widths []int, borders borderSet) string {
+func topRow(cells []cell, widths []int, borders borderSet) string {
 	parts := make([]string, len(cells))
 	for i, cell := range cells {
 		parts[i] = RenderCell(cell.text, widths[i], cell.alignment)
 	}
-	return borders.vertical + strings.Join(parts, " ") + borders.vertical
+	return borders.vertical + strings.Join(parts, borders.vertical) + borders.vertical
 }
 
 func twoCol(leftLabel, leftValue, rightLabel, rightValue string, leftWidth, rightWidth int, borders borderSet) string {
