@@ -1,11 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"disk-smi/internal/app"
+	"disk-smi/internal/jsonout"
 	"disk-smi/internal/model"
 	"disk-smi/internal/render"
 )
@@ -106,6 +111,39 @@ func TestShouldFallbackASCII(t *testing.T) {
 	}
 }
 
+func TestValidateCheckFlags(t *testing.T) {
+	tests := []struct {
+		name       string
+		check      bool
+		jsonOutput bool
+		jsonPretty bool
+		summary    bool
+		loop       time.Duration
+		wantError  string
+	}{
+		{name: "disabled, anything goes", check: false, jsonOutput: true, summary: true, loop: 5 * time.Second},
+		{name: "check alone", check: true},
+		{name: "check with json", check: true, jsonOutput: true, wantError: "--json"},
+		{name: "check with json-pretty", check: true, jsonPretty: true, wantError: "--json"},
+		{name: "check with summary", check: true, summary: true, wantError: "--summary"},
+		{name: "check with loop", check: true, loop: 5 * time.Second, wantError: "--loop"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateCheckFlags(tt.check, tt.jsonOutput, tt.jsonPretty, tt.summary, tt.loop)
+			if tt.wantError != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantError) {
+					t.Fatalf("error = %v, want containing %q", err, tt.wantError)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
 func TestFormatDiagnosticsEmpty(t *testing.T) {
 	if got := app.FormatDiagnostics(app.Diagnostics{}); got != "" {
 		t.Fatalf("empty diagnostics = %q", got)
@@ -120,6 +158,60 @@ func TestShouldStopLoop(t *testing.T) {
 	if !shouldStopLoop(2) {
 		t.Fatal("loop did not stop at limit")
 	}
+}
+
+func TestRunLoopEmitsNDJSONWithoutScreenClearing(t *testing.T) {
+	t.Setenv("DISK_SMI_LOOP_COUNT", "3")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = writer
+	defer func() { os.Stdout = originalStdout }()
+
+	calls := 0
+	loopErr := runLoop(time.Nanosecond, func() (string, error) {
+		calls++
+		snapshots := []model.DriveSnapshot{model.SyntheticSnapshot()}
+		return jsonoutRender(t, snapshots)
+	})
+	writer.Close()
+	os.Stdout = originalStdout
+
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, reader); err != nil {
+		t.Fatal(err)
+	}
+	if loopErr != nil {
+		t.Fatal(loopErr)
+	}
+	if calls != 3 {
+		t.Fatalf("calls = %d, want 3", calls)
+	}
+	output := buf.String()
+	if strings.Contains(output, "\x1b[") {
+		t.Fatalf("NDJSON loop output must not contain ANSI escapes:\n%q", output)
+	}
+	lines := strings.Split(strings.TrimRight(output, "\n"), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("expected 3 NDJSON lines, got %d:\n%q", len(lines), output)
+	}
+	for _, line := range lines {
+		var decoded map[string]any
+		if err := json.Unmarshal([]byte(line), &decoded); err != nil {
+			t.Fatalf("line is not a single valid JSON document: %v\nline: %s", err, line)
+		}
+		if _, ok := decoded["generated_at"]; !ok {
+			t.Fatalf("NDJSON record missing generated_at timestamp: %s", line)
+		}
+	}
+}
+
+func jsonoutRender(t *testing.T, snapshots []model.DriveSnapshot) (string, error) {
+	t.Helper()
+	return jsonout.Render(snapshots, string(render.LocaleEnglish), time.Now(), jsonout.Options{})
 }
 
 func TestRunSnapshotLoopTwoIterations(t *testing.T) {

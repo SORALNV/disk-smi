@@ -27,6 +27,7 @@ func main() {
 		showVersion bool
 		jsonOutput  bool
 		jsonPretty  bool
+		check       bool
 		summary     bool
 		noColor     bool
 		iec         bool
@@ -46,6 +47,7 @@ func main() {
 	flag.BoolVar(&showVersion, "version", false, "print version")
 	flag.BoolVar(&jsonOutput, "json", false, "output JSON")
 	flag.BoolVar(&jsonPretty, "json-pretty", false, "output pretty JSON")
+	flag.BoolVar(&check, "check", false, "monitoring mode: print one status line per drive and exit non-zero on caution/critical")
 	flag.BoolVar(&summary, "summary", false, "show compact summary")
 	flag.BoolVar(&noColor, "no-color", false, "disable color")
 	flag.BoolVar(&iec, "iec", false, "display bytes as IEC units")
@@ -61,6 +63,10 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: disk-smi [options] [disk]\n\n")
 		flag.PrintDefaults()
+		fmt.Fprintf(flag.CommandLine.Output(), "\nMonitoring:\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "  disk-smi --check              one status line per drive, exit 0/1/8 (see docs/spec-v0.4.md)\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "\nNDJSON logging:\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "  disk-smi --json -l 5 >> smart-log.ndjson   one JSON document per interval\n")
 	}
 	flag.Parse()
 	explicit := explicitFlags(flag.CommandLine)
@@ -103,6 +109,14 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
+	if err := validateCheckFlags(check, jsonOutput, jsonPretty, summary, loopInterval); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	if jsonPretty && loopInterval > 0 {
+		fmt.Fprintln(os.Stderr, "--json-pretty cannot be combined with -l/--loop; use --json for NDJSON output instead")
+		os.Exit(2)
+	}
 	width := 100
 	if !(widthArg == "auto" && loopInterval > 0 && !jsonOutput && !jsonPretty) {
 		width, err = resolveWidth(widthArg)
@@ -115,6 +129,18 @@ func main() {
 	locale := render.LocaleEnglish
 	if japanese || langArg == "ja-JP" || langArg == "ja" {
 		locale = render.LocaleJapanese
+	}
+
+	if check {
+		snapshotOptions := app.SnapshotOptions{Detail: true, Backend: backend}
+		output, code, diagnostics, err := app.RunCheck(inputPath, target, locale, snapshotOptions)
+		printDiagnostics(debug, diagnostics)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, app.UserMessage(err, locale))
+			os.Exit(app.ExitCode(err))
+		}
+		fmt.Print(output)
+		os.Exit(code)
 	}
 
 	opts := render.Options{
@@ -305,6 +331,22 @@ func shouldFallbackASCII() bool {
 	return !strings.Contains(upper, "UTF-8") && !strings.Contains(upper, "UTF8")
 }
 
+func validateCheckFlags(check, jsonOutput, jsonPretty, summary bool, loopInterval time.Duration) error {
+	if !check {
+		return nil
+	}
+	if jsonOutput || jsonPretty {
+		return fmt.Errorf("--check cannot be combined with --json/--json-pretty")
+	}
+	if summary {
+		return fmt.Errorf("--check cannot be combined with --summary")
+	}
+	if loopInterval > 0 {
+		return fmt.Errorf("--check cannot be combined with -l/--loop")
+	}
+	return nil
+}
+
 func parseLoopInterval(shortValue int, longValue int) (time.Duration, error) {
 	if shortValue > 0 && longValue > 0 && shortValue != longValue {
 		return 0, fmt.Errorf("-l and --loop specify different intervals")
@@ -322,6 +364,10 @@ func parseLoopInterval(shortValue int, longValue int) (time.Duration, error) {
 	return time.Duration(seconds) * time.Second, nil
 }
 
+// runLoop drives the JSON/NDJSON loop path (--json -l N). It never clears the
+// screen or emits ANSI codes: each interval appends one JSON document
+// followed by a newline, so the stream stays valid NDJSON whether it goes to
+// a TTY, a pipe, or a redirected log file (e.g. `>> smart-log.ndjson`).
 func runLoop(interval time.Duration, renderOnce func() (string, error)) error {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -333,9 +379,6 @@ func runLoop(interval time.Duration, renderOnce func() (string, error)) error {
 		output, err := renderOnce()
 		if err != nil {
 			return err
-		}
-		if isTerminal(os.Stdout) {
-			fmt.Print("\x1b[H\x1b[2J")
 		}
 		fmt.Print(output)
 		if shouldStopLoop(count) {

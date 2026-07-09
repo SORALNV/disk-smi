@@ -1,3 +1,5 @@
+![1782444668309](image/README/1782444668309.png)
+
 # disk-smi
 
 `disk-smi` は、Mac のSSD状態をターミナルで確認するためのツールです。`nvidia-smi` のような固定幅パネルで、SSDの健康状態、耐久残量、温度、通電時間、電源投入回数、累積I/Oなどを表示します。
@@ -139,6 +141,7 @@ disk0               disk0だけを見る
 --ascii             ASCII罫線で表示
 --no-color          色を無効化
 --debug             取得に使ったコマンドや失敗理由をstderrに表示
+--check             監視用モード。1行1台のステータス行を出力し、状態に応じた終了コードを返す
 ```
 
 バックエンドを指定したい場合:
@@ -219,6 +222,62 @@ disk-smi --json-pretty
 
 ```bash
 disk-smi --json-pretty --show-serial
+```
+
+### ログ用途に流し込みたい場合（NDJSON）
+
+`--json` と `-l`/`--loop` を組み合わせると、更新間隔ごとにJSONを1行ずつ出力します（NDJSON、[Newline Delimited JSON](https://github.com/ndjson/ndjson-spec)）。各行には `generated_at` タイムスタンプが含まれるので、そのままログファイルへ追記できます。
+
+```bash
+disk-smi --json -l 5 >> smart-log.ndjson
+```
+
+この経路では画面クリアやANSI装飾を一切出しません。TTYへ出しても、パイプへ出しても、リダイレクトしてファイルへ出しても、同じ1行1JSONの形式になります。
+
+`--json-pretty` はループと組み合わせられません（整形済みJSONは複数行になり、NDJSONとして壊れるため）。ループでJSONを流したい場合は必ず `--json` を使ってください。
+
+```bash
+disk-smi --json-pretty -l 5
+# => エラー: --json-pretty cannot be combined with -l/--loop; use --json for NDJSON output instead
+```
+
+## 監視モード（--check）
+
+cronやlaunchd、Nagios系の監視ツールから定期実行して、SSDの状態だけを手早く確認したい場合は `--check` を使います。検出された（または指定した）ドライブごとに1行ずつ、コンパクトなステータス行を出力します。
+
+```bash
+disk-smi --check
+```
+
+```text
+GOOD disk0 APPLE SSD AP1024Z endurance=70% temp=36C
+```
+
+```bash
+disk-smi -jp --check
+```
+
+```text
+正常 disk0 APPLE SSD AP1024Z endurance=70% temp=36C
+```
+
+取得できない値は `0` ではなく `-` として表示します（例: `temp=-`）。`CAUTION`/`CRITICAL`/`危険`/`注意` の場合は、末尾に理由コード（`reasons=ENDURANCE_LOW` など）も付きます。
+
+終了コードは次の通りです。
+
+| 終了コード | 意味                              |
+| ----: | ------------------------------- |
+|     0 | すべてのドライブがGOOD（正常）               |
+|     1 | いずれかのドライブがCAUTION（注意）またはUNKNOWN（不明） |
+|     8 | いずれかのドライブがCRITICAL（危険）           |
+
+既存の `disk-smi` 終了コード表（`docs/spec-v0.4.md` の「エラー終了コード」）は、`0`・`2`〜`7` をCLI引数エラーや権限不足などに使っています。慣習的なNagios形式（`0`/`1`/`2`）をそのまま採用すると、`2`が「CLI引数エラー」と「CRITICAL」の両方を意味してしまい紛らわしくなるため、空いている`1`をWARNING、`8`をCRITICAL用に割り当てています。UNKNOWN（データ取得不能）は「取得できないことを正常と解釈しない」という仕様方針に沿って、WARNING（終了コード1）側に含めています。
+
+`--check` は `--json`/`--json-pretty`/`--summary`/`-l`・`--loop` と同時には使えません。組み合わせた場合はエラーになります。
+
+```bash
+disk-smi --check --json
+# => エラー: --check cannot be combined with --json/--json-pretty
 ```
 
 ## GitHub Releasesから入れる場合

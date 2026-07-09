@@ -17,6 +17,8 @@ This document tracks implementation progress against `docs/spec-v0.4.md`.
 - Loop deltas for read/write rate, IOPS, and temperature change
 - Loop mode recomputes `--width auto` on each sample
 - Loop mode wakes and redraws on SIGWINCH terminal resize events
+- `--json -l N` NDJSON loop output: one JSON document per interval, no screen clearing or ANSI escapes, safe to redirect (`>> smart-log.ndjson`); `--json-pretty` is rejected when combined with a loop interval since pretty-printed JSON would break the one-record-per-line contract
+- `--check` monitoring mode for cron/launchd/Nagios-style checks: one compact status line per drive (`STATUS device model endurance=N% temp=NC`, with `reasons=` for caution/critical, missing values as `-`), rejecting `--json`/`--json-pretty`/`--summary`/`-l`/`--loop`; exit code 0 (good), 1 (caution/unknown), 8 (critical) since 2 is already the CLI-argument-error code
 - JSON output with English keys and string counters
 - JSON detailed SMART sections for endurance, thermals, reliability, I/O, power, and null-value missing reasons
 - Serial masking by default
