@@ -248,6 +248,87 @@ func TestFormatBytesIEC(t *testing.T) {
 	}
 }
 
+func TestPaddedKeyValueAlignsValueColumns(t *testing.T) {
+	tests := []struct {
+		name        string
+		width       int
+		firstLabel  string
+		firstValue  string
+		secondLabel string
+		secondValue string
+	}{
+		{
+			name:        "english",
+			width:       36,
+			firstLabel:  "Host writes",
+			firstValue:  "4.20 TB",
+			secondLabel: "Host reads",
+			secondValue: "3.50 TB",
+		},
+		{
+			name:        "japanese",
+			width:       36,
+			firstLabel:  "総書き込み量",
+			firstValue:  "5.03 TB",
+			secondLabel: "総読み込み量",
+			secondValue: "9.46 TB",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			first := paddedKeyValue(tt.firstLabel, tt.firstValue, tt.width)
+			second := paddedKeyValue(tt.secondLabel, tt.secondValue, tt.width)
+
+			if got := DisplayWidth(first); got != tt.width {
+				t.Fatalf("first width = %d, want %d", got, tt.width)
+			}
+			if got := DisplayWidth(second); got != tt.width {
+				t.Fatalf("second width = %d, want %d", got, tt.width)
+			}
+			if strings.Index(first, tt.firstValue) != strings.Index(second, tt.secondValue) {
+				t.Fatalf("value starts differ: %q vs %q", first, second)
+			}
+			if strings.Index(first, "TB") != strings.Index(second, "TB") {
+				t.Fatalf("unit starts differ: %q vs %q", first, second)
+			}
+		})
+	}
+}
+
+func TestTopIOKeyValueCentersCompactAlignedGroup(t *testing.T) {
+	labelWidth := maxDisplayWidth("総書き込み量", "総読み込み量")
+	valueWidth := maxDisplayWidth("5.04 TB", "9.47 TB")
+	writes := topIOKeyValue("総書き込み量", "5.04 TB", 36, labelWidth, valueWidth)
+	reads := topIOKeyValue("総読み込み量", "9.47 TB", 36, labelWidth, valueWidth)
+
+	for _, line := range []string{writes, reads} {
+		if width := DisplayWidth(line); width != 36 {
+			t.Fatalf("width = %d, want 36: %q", width, line)
+		}
+	}
+	if !strings.HasPrefix(writes, "       ") || !strings.HasSuffix(writes, "        ") {
+		t.Fatalf("writes should have broad outer padding: %q", writes)
+	}
+	if !strings.Contains(writes, "総書き込み量  5.04 TB") {
+		t.Fatalf("writes should have compact label/value gap: %q", writes)
+	}
+	if valueStartColumn(writes, "5.04 TB") != valueStartColumn(reads, "9.47 TB") {
+		t.Fatalf("value starts differ: %q vs %q", writes, reads)
+	}
+	if valueStartColumn(writes, "TB") != valueStartColumn(reads, "TB") {
+		t.Fatalf("unit starts differ: %q vs %q", writes, reads)
+	}
+}
+
+func valueStartColumn(line, value string) int {
+	index := strings.Index(line, value)
+	if index < 0 {
+		return -1
+	}
+	return DisplayWidth(line[:index])
+}
+
 func TestRenderSummary(t *testing.T) {
 	first := model.SyntheticSnapshot()
 	second := model.SyntheticSnapshot()

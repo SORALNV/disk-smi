@@ -125,6 +125,10 @@ func renderPanel(snapshot model.DriveSnapshot, opts Options, text labels, border
 	inner := width - 2
 	topCols := topColumns(inner)
 	left, right := bottomColumns(inner)
+	hostWritesValue := bytes(snapshot.Metrics.HostWritesBytes, opts, text)
+	hostReadsValue := bytes(snapshot.Metrics.HostReadsBytes, opts, text)
+	topIOLabelWidth := maxDisplayWidth(text.hostWrites, text.hostReads)
+	topIOValueWidth := maxDisplayWidth(hostWritesValue, hostReadsValue)
 	lines := []string{
 		borders.topLeft + strings.Repeat(borders.horizontal, inner) + borders.topRight,
 		wrapSingle(snapshotHeader(snapshot, opts, text), inner, borders),
@@ -140,13 +144,13 @@ func renderPanel(snapshot model.DriveSnapshot, opts Options, text labels, border
 			{status(snapshot.Assessment.OverallStatus, opts, text), AlignCenter},
 			{temperature(snapshot.Metrics.TemperatureCelsius, text), AlignCenter},
 			{hours(snapshot.Metrics.PowerOnHours, text, false), AlignCenter},
-			{text.hostWrites + "  " + bytes(snapshot.Metrics.HostWritesBytes, opts, text), AlignCenter},
+			{topIOKeyValue(text.hostWrites, hostWritesValue, topCols[3], topIOLabelWidth, topIOValueWidth), AlignLeft},
 		}, topCols, borders),
 		topRow([]cell{
 			{text.enduranceLine + " " + enduranceRemaining(snapshot.Metrics.EnduranceUsedPercent, text), AlignCenter},
 			{"", AlignCenter},
 			{hours(snapshot.Metrics.PowerOnHours, text, true), AlignCenter},
-			{text.hostReads + "   " + bytes(snapshot.Metrics.HostReadsBytes, opts, text), AlignCenter},
+			{topIOKeyValue(text.hostReads, hostReadsValue, topCols[3], topIOLabelWidth, topIOValueWidth), AlignLeft},
 		}, topCols, borders),
 		topRow([]cell{{"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}, {"", AlignCenter}}, topCols, borders),
 		separator(topCols, borders.teeUp, borders),
@@ -327,6 +331,29 @@ func paddedKeyValue(label, value string, width int) string {
 		return keyValue(label, value, width)
 	}
 	return " " + keyValue(label, value, width-2) + " "
+}
+
+func topIOKeyValue(label, value string, width, labelWidth, valueWidth int) string {
+	label = SanitizeTerminalText(label)
+	value = SanitizeTerminalText(value)
+
+	const gap = 2
+	groupWidth := labelWidth + gap + valueWidth
+	if groupWidth > width {
+		return RenderCell(label+" "+value, width, AlignCenter)
+	}
+	group := RenderCell(label, labelWidth, AlignLeft) + strings.Repeat(" ", gap) + RenderCell(value, valueWidth, AlignRight)
+	return RenderCell(group, width, AlignCenter)
+}
+
+func maxDisplayWidth(values ...string) int {
+	maxWidth := 0
+	for _, value := range values {
+		if width := DisplayWidth(value); width > maxWidth {
+			maxWidth = width
+		}
+	}
+	return maxWidth
 }
 
 func keyValue(label, value string, width int) string {
